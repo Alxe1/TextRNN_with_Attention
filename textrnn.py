@@ -72,24 +72,13 @@ class TextRNN(object):
 
         # BahdanauAttention Layer
         with tf.name_scope('attention'):
-            # input_shape = rnn_output.shape # (batch_size, sequence_length, hidden_size)
-            # sequence_size = input_shape[1].value  # the length of sequences processed in the RNN layer
-            # hidden_size = input_shape[2].value  # hidden size of the RNN layer
+		
             hidden_size = rnn_output.shape[2].value
 
             attention_w = tf.Variable(tf.truncated_normal([hidden_size, attention_size], stddev=0.1), name='attention_w')
             attention_b = tf.Variable(tf.constant(0.1, shape=[attention_size]), name='attention_b')
             attention_u = tf.Variable(tf.truncated_normal([attention_size], stddev=0.1), name='attention_u')
-            # z_list = []
-            # for t in range(sequence_size):
-            #     u_t = tf.tanh(tf.matmul(rnn_output[:, t, :], attention_w) + tf.reshape(attention_b, [1, -1]))  # shape: [batch_size, attension_size]
-            #     z_t = tf.matmul(u_t, tf.reshape(attention_u, [-1, 1]))  # shape: [batch_size, 1]
-            #     z_list.append(z_t)
-            # # Transform to batch_size * sequence_size
-            # attention_z = tf.concat(z_list, axis=1)  # shape: [batch_size, sequence_size]
-            # self.alpha = tf.nn.softmax(attention_z)  # shape: [batch_size, sequence_size]
-            # # Transform to batch_size * sequence_size * 1 , same **rank**(not shape) as rnn_output
-            # attention_output = tf.reduce_sum(rnn_output * tf.reshape(self.alpha, [-1, sequence_size, 1]), 1)
+
             v = tf.tanh(tf.tensordot(rnn_output, attention_w, axes=1) + attention_b)
             vu = tf.tensordot(v, attention_u, axes=1, name='vu')
             alphas = tf.nn.softmax(vu, name='alphas')
