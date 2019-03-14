@@ -175,6 +175,60 @@ def train_rnn(X, y, batch_size, num_epoch, output_dir, val_X=None, val_y=None):
                         )
                         val_summaries_writer.add_summary(val_summaries, global_step=global_step)
                         print("global_step: {}, val loss: {:g}, val acc: {:g}".format(global_step, val_loss, val_accuracy))
+						
+
+
+def predict(x_test, y_test=None, checkpoint_dir=None):
+
+    checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
+    print(checkpoint_file)
+    graph = tf.Graph()
+    with graph.as_default():
+        session_conf = tf.ConfigProto(
+            allow_soft_placement=True,
+            log_device_placement=False
+        )
+        sess = tf.Session(config=session_conf)
+        with sess.as_default():
+            # Load the saved meta graph and restore variables
+            saver = tf.train.import_meta_graph("{}.meta".format(checkpoint_file))
+            saver.restore(sess, checkpoint_file)
+
+            # Get the placeholders from graph by name
+            input_x = graph.get_operation_by_name("input_x").outputs[0]
+            seq_len = graph.get_operation_by_name("seq_len").outputs[0]
+            keep_prob = graph.get_operation_by_name("keep_prob").outputs[0]
+
+            # Tensor we want to evaluate
+            predictions = graph.get_operation_by_name("output/predictions").outputs[0]
+
+            # Collect the predictions
+            all_predictions = np.array([], dtype=np.int64)
+            if y_test is not None:
+                batches = text_preprocessing.batch_iter(x_test, y_test, 64, 1, shuffle=False)
+                for x_batch, seq_lens, _ in batches:  # _ stand for y_batch
+                    feed_dict = {input_x: x_batch, seq_len: seq_lens, keep_prob: 1.0}
+                    batch_prediction = sess.run(
+                        predictions,
+                        feed_dict=feed_dict
+                    )
+                    all_predictions = np.concatenate([all_predictions, batch_prediction])
+                print("all predictions: ", all_predictions)
+                correct_predictions = np.sum(all_predictions == np.argmax(y_test, axis=1))
+                accuracy = correct_predictions / len(y_test)
+                print("test data accuracy: ", accuracy)
+            else:
+                for i in range(0, len(x_test), 64):  # set batch_size to 64
+                    padded_sentences, seq_lens = text_preprocessing.pad_sentence(x_test[i:i + 64])
+                    feed_dict = {input_x: padded_sentences, seq_len: seq_lens, keep_prob: 1.0}
+                    batch_prediction = sess.run(
+                        predictions,
+                        feed_dict=feed_dict
+                    )
+                    all_predictions = np.concatenate([all_predictions, batch_prediction])
+
+    return all_predictions
+
 
 
 if __name__ == '__main__':
