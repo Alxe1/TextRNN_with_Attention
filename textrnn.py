@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 # @Author  : LiuLei
 # @File    : textrnn.py
-# @Software: PyCharm
 # Desc     :
 
 import datetime

@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 # @Author  : LiuLei
 # @File    : text_preprocessing.py
-# @Software: PyCharm
 # Desc     :
 
 import logging
